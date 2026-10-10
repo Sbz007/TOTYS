@@ -1,0 +1,4 @@
+Pon aqui tus dos imagenes PNG:
+  logo.png   -> reemplaza el "TOTY DLS" de arriba (fondo transparente, formato horizontal)
+  marca.png  -> tu marca de agua cuadrada (esquina inferior izquierda)
+Si no existen, se muestra el texto de respaldo.

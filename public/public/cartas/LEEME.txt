@@ -1,0 +1,1 @@
+Pon aqui las imagenes de tus cartas: por-1.png ... por-5.png, def-1.png ... def-10.png, med-1.png ... med-10.png, del-1.png ... del-14.png
