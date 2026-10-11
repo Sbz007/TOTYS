@@ -36,7 +36,7 @@ const T = {
     grupos: { POR: 'Porteros', DEF: 'Defensas', MED: 'Medios', DEL: 'Delanteros' },
     titulo: 'Elige tu Equipo del Año',
     posterTitulo: 'EQUIPO DEL AÑO',
-    ayuda: 'Arrastra las cartas a la cancha (o tócalas para colocarlas). Toca una carta en la cancha para quitarla.',
+    ayuda: 'Toca una carta para colocarla, o mantenla presionada y arrástrala a la cancha. Toca una carta de la cancha para quitarla.',
     terminar: 'Terminar equipo',
     nombreQ: '¿Cuál es tu nombre?',
     placeholder: 'Escribe tu nombre',
@@ -55,7 +55,7 @@ const T = {
     grupos: { POR: 'Goalkeepers', DEF: 'Defenders', MED: 'Midfielders', DEL: 'Forwards' },
     titulo: 'Pick your Team of the Year',
     posterTitulo: 'TEAM OF THE YEAR',
-    ayuda: 'Drag the cards onto the pitch (or tap them to place them). Tap a card on the pitch to remove it.',
+    ayuda: 'Tap a card to place it, or press and hold to drag it onto the pitch. Tap a card on the pitch to remove it.',
     terminar: 'Finish team',
     nombreQ: "What's your name?",
     placeholder: 'Type your name',
@@ -74,7 +74,7 @@ const T = {
     grupos: { POR: 'Goleiros', DEF: 'Defensores', MED: 'Meio-campistas', DEL: 'Atacantes' },
     titulo: 'Escolha seu Time do Ano',
     posterTitulo: 'TIME DO ANO',
-    ayuda: 'Arraste as cartas para o campo (ou toque nelas para colocá-las). Toque em uma carta no campo para removê-la.',
+    ayuda: 'Toque em uma carta para colocá-la, ou segure e arraste para o campo. Toque em uma carta no campo para removê-la.',
     terminar: 'Finalizar time',
     nombreQ: 'Qual é o seu nome?',
     placeholder: 'Digite seu nome',
@@ -146,6 +146,8 @@ export default function App() {
   const t = T[lang]
 
   const dragRef = useRef(null)
+  const pendRef = useRef(null) // toque pendiente (esperando mantener presionado)
+  const soltarRef = useRef(null)
   const posterRef = useRef(null)
   const avisoTimer = useRef(null)
 
@@ -186,6 +188,20 @@ export default function App() {
   /* ---------- Arrastrar (mouse y touch con pointer events) ---------- */
   const empezar = (e, player, from) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return
+    if (e.pointerType === 'touch') {
+      // En celular el deslizamiento hace scroll; para arrastrar hay que mantener presionado.
+      const pend = { player, from, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY }
+      pend.timer = setTimeout(() => {
+        if (pendRef.current !== pend) return
+        pendRef.current = null
+        const d = { player, from, x: pend.x, y: pend.y, sx: pend.sx, sy: pend.sy, moved: true }
+        dragRef.current = d
+        setDrag(d)
+        try { navigator.vibrate?.(15) } catch {}
+      }, 230)
+      pendRef.current = pend
+      return
+    }
     e.preventDefault()
     const d = {
       player,
@@ -242,10 +258,20 @@ export default function App() {
     })
   }
 
-  const activo = drag !== null
+  soltarRef.current = soltar
   useEffect(() => {
-    if (!activo) return
     const mover = (e) => {
+      const pend = pendRef.current
+      if (pend) {
+        pend.x = e.clientX
+        pend.y = e.clientY
+        // Si el dedo se mueve antes de tiempo, es un scroll: no arrastrar
+        if (Math.hypot(e.clientX - pend.sx, e.clientY - pend.sy) > 8) {
+          clearTimeout(pend.timer)
+          pendRef.current = null
+        }
+        return
+      }
       const d = dragRef.current
       if (!d) return
       const moved =
@@ -255,20 +281,35 @@ export default function App() {
       setDrag(nd)
     }
     const fin = (e) => {
+      const pend = pendRef.current
+      if (pend) {
+        clearTimeout(pend.timer)
+        pendRef.current = null
+        // Toque corto (sin scroll): colocar / quitar la carta
+        if (e.type === 'pointerup')
+          soltarRef.current({ player: pend.player, from: pend.from, moved: false }, e.clientX, e.clientY)
+        return
+      }
       const d = dragRef.current
       dragRef.current = null
       setDrag(null)
-      if (d && e.type === 'pointerup') soltar(d, e.clientX, e.clientY)
+      if (d && e.type === 'pointerup') soltarRef.current(d, e.clientX, e.clientY)
+    }
+    // Mientras se arrastra con el dedo, la página no debe hacer scroll
+    const bloquear = (e) => {
+      if (dragRef.current && e.cancelable) e.preventDefault()
     }
     window.addEventListener('pointermove', mover)
     window.addEventListener('pointerup', fin)
     window.addEventListener('pointercancel', fin)
+    window.addEventListener('touchmove', bloquear, { passive: false })
     return () => {
       window.removeEventListener('pointermove', mover)
       window.removeEventListener('pointerup', fin)
       window.removeEventListener('pointercancel', fin)
+      window.removeEventListener('touchmove', bloquear)
     }
-  }, [activo])
+  }, [])
 
   /* ---------- Descargar imagen ---------- */
   const descargar = async () => {
@@ -348,6 +389,7 @@ export default function App() {
                     }`}
                     title={t.quitar}
                     onPointerDown={(e) => empezar(e, p, s.id)}
+                    onContextMenu={(e) => e.preventDefault()}
                   >
                     <Carta p={p} t={t} />
                   </div>
@@ -414,6 +456,7 @@ export default function App() {
                 className={`op ${usado ? 'usado' : ''}`}
                 title={j.nombre}
                 onPointerDown={usado ? undefined : (e) => empezar(e, j, null)}
+                onContextMenu={(e) => e.preventDefault()}
               >
                 <Carta p={j} t={t} />
               </div>
