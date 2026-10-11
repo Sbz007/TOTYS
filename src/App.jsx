@@ -22,7 +22,7 @@ const SLOTS = [
 const ORDEN = ['POR', 'DEF', 'MED', 'DEL']
 
 // >>> Pon aquí tu URL (sale abajo en la imagen al terminar el equipo)
-const URL_SITIO = 'tusitio.com'
+const URL_SITIO = 'https://totys.vercel.app/'
 
 const IDIOMAS = [
   { c: 'es', l: 'ES' },
