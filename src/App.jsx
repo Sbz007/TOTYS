@@ -62,11 +62,6 @@ const FORMACIONES = {
 }
 const FORM_ORDEN = ['343', '433', '442']
 
-// Navegadores integrados de apps (Facebook, Instagram, Messenger...): descargan y comparten mal.
-const UA = typeof navigator !== 'undefined' ? navigator.userAgent : ''
-const EN_APP = /FBAN|FBAV|FB_IAB|FBIOS|Instagram|MicroMessenger|TikTok|musical_ly|Line\//i.test(UA)
-const ES_ANDROID = /Android/i.test(UA)
-
 // ¿Puede este jugador ir en este hueco?
 const cabe = (slot, player) => slot.pos === player.pos
 
@@ -74,9 +69,6 @@ const ORDEN = ['POR', 'DEF', 'MED', 'DEL']
 
 // >>> Pon aquí tu URL (sale abajo en la imagen al terminar el equipo)
 const URL_SITIO = 'totys.vercel.app'
-
-// Página de Facebook que se muestra al terminar
-const URL_FACEBOOK = 'https://www.facebook.com/Zee.IO23'
 
 // >>> Estadísticas: pega aquí la URL de tu Apps Script (termina en /exec).
 // Si queda vacía, no se envía nada.
@@ -113,17 +105,6 @@ const T = {
     compartir: 'Compartir imagen',
     shareTexto: 'Mi Equipo del Año. Crea el tuyo en',
     shareNoDisp: 'Tu navegador no permite compartir; se descargó la imagen',
-    appAviso: 'Estás viendo la página dentro de Facebook. Para descargar tu imagen sin problemas, ábrela en tu navegador.',
-    appAbrir: 'Abrir en mi navegador',
-    appCopiar: 'Copiar enlace',
-    appCopiado: 'Enlace copiado. Pégalo en tu navegador',
-    appMenu: 'Si no se abre, toca los tres puntos (⋯) y elige "Abrir en el navegador" o "Abrir en Safari".',
-    vistaTitulo: 'Tu equipo está listo',
-    finalTitulo: '¡Gracias por armar tu equipo!',
-    finalTexto: 'Síguenos en Facebook para ver más contenido de Zee IO.',
-    finalBtn: 'Ir a la página de Facebook',
-    vistaAyuda: 'Mantén presionada la imagen y elige "Guardar imagen" o "Descargar imagen".',
-    cerrar: 'Cerrar',
     tutSig: 'Siguiente', tutAtras: 'Atrás', tutEmpezar: 'Empezar', tutSaltar: 'Saltar', tutAyuda: 'Cómo se juega',
     nombreQ: '¿Cuál es tu nombre?',
     placeholder: 'Escribe tu nombre',
@@ -161,17 +142,6 @@ const T = {
     compartir: 'Share image',
     shareTexto: 'My Team of the Year. Create yours at',
     shareNoDisp: 'Your browser can\'t share; the image was downloaded instead',
-    appAviso: 'You\'re viewing this page inside Facebook. To download your image without problems, open it in your browser.',
-    appAbrir: 'Open in my browser',
-    appCopiar: 'Copy link',
-    appCopiado: 'Link copied. Paste it in your browser',
-    appMenu: 'If it doesn\'t open, tap the three dots (⋯) and choose "Open in browser" or "Open in Safari".',
-    vistaTitulo: 'Your team is ready',
-    finalTitulo: 'Thanks for building your team!',
-    finalTexto: 'Follow us on Facebook for more from Zee IO.',
-    finalBtn: 'Go to our Facebook page',
-    vistaAyuda: 'Press and hold the image and choose "Save image" or "Download image".',
-    cerrar: 'Close',
     tutSig: 'Next', tutAtras: 'Back', tutEmpezar: 'Start', tutSaltar: 'Skip', tutAyuda: 'How it works',
     nombreQ: "What's your name?",
     placeholder: 'Type your name',
@@ -209,17 +179,6 @@ const T = {
     compartir: 'Compartilhar imagem',
     shareTexto: 'Meu Time do Ano. Crie o seu em',
     shareNoDisp: 'Seu navegador não permite compartilhar; a imagem foi baixada',
-    appAviso: 'Você está vendo a página dentro do Facebook. Para baixar sua imagem sem problemas, abra no seu navegador.',
-    appAbrir: 'Abrir no meu navegador',
-    appCopiar: 'Copiar link',
-    appCopiado: 'Link copiado. Cole no seu navegador',
-    appMenu: 'Se não abrir, toque nos três pontos (⋯) e escolha "Abrir no navegador" ou "Abrir no Safari".',
-    vistaTitulo: 'Seu time está pronto',
-    finalTitulo: 'Obrigado por montar seu time!',
-    finalTexto: 'Siga-nos no Facebook para ver mais do Zee IO.',
-    finalBtn: 'Ir para a página do Facebook',
-    vistaAyuda: 'Segure a imagem e escolha "Salvar imagem" ou "Baixar imagem".',
-    cerrar: 'Fechar',
     tutSig: 'Próximo', tutAtras: 'Voltar', tutEmpezar: 'Começar', tutSaltar: 'Pular', tutAyuda: 'Como funciona',
     nombreQ: 'Qual é o seu nome?',
     placeholder: 'Digite seu nome',
@@ -414,9 +373,6 @@ export default function App() {
   const [formacion, setFormacion] = useState('343')
   const [eligiendo, setEligiendo] = useState(false) // selector de formación abierto
   const [eligio, setEligio] = useState(false) // ya eligió formación al menos una vez
-  const [bannerApp, setBannerApp] = useState(EN_APP) // aviso "ábrelo en tu navegador"
-  const [final, setFinal] = useState(false) // pantalla final con la página de Facebook
-  const [vista, setVista] = useState(null) // imagen lista para guardar a mano (navegadores de apps)
   const SLOTS = FORMACIONES[formacion].slots
   const [aviso, setAviso] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -693,20 +649,6 @@ export default function App() {
       .catch(() => {})
   }
 
-  /* ---------- Navegador de la app (Facebook, etc.) ---------- */
-  const abrirExterno = () => {
-    // Android: intenta abrir el enlace en el navegador predeterminado
-    window.location.href = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;end`
-  }
-  const copiarEnlace = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href)
-      avisar(t.appCopiado)
-    } catch {
-      window.prompt(t.appCopiar, window.location.href)
-    }
-  }
-
   /* ---------- Descargar y compartir imagen ---------- */
   const generar = async () => {
     await document.fonts?.ready
@@ -720,11 +662,6 @@ export default function App() {
   const nombreArchivo = () =>
     `equipo-del-año-${nombre.trim().replace(/\s+/g, '-') || 'dls'}.png`
   const bajar = (canvas) => {
-    if (EN_APP) {
-      // Los navegadores de Facebook/Instagram bloquean las descargas: se muestra la imagen para guardarla a mano
-      setVista(canvas.toDataURL('image/png'))
-      return
-    }
     const a = document.createElement('a')
     a.download = nombreArchivo()
     a.href = canvas.toDataURL('image/png')
@@ -736,7 +673,6 @@ export default function App() {
     try {
       bajar(await generar())
       registrarVoto()
-      setFinal(true)
     } catch (err) {
       console.error(err)
       avisar(t.error)
@@ -759,12 +695,10 @@ export default function App() {
           text: `${t.shareTexto} https://${URL_SITIO}`,
         })
         registrarVoto()
-        setFinal(true)
       } else {
         bajar(canvas) // navegador sin soporte: se descarga
         registrarVoto()
-        setFinal(true)
-        if (!EN_APP) avisar(t.shareNoDisp)
+        avisar(t.shareNoDisp)
       }
     } catch (err) {
       if (err?.name !== 'AbortError') {
@@ -780,26 +714,6 @@ export default function App() {
 
   return (
     <div className="app">
-      {bannerApp && (
-        <div className="banner-app" role="alert">
-          <p>{t.appAviso}</p>
-          <div className="banner-btns">
-            {ES_ANDROID && (
-              <button className="btn" onClick={abrirExterno}>
-                {t.appAbrir}
-              </button>
-            )}
-            <button className="btn sec" onClick={copiarEnlace}>
-              {t.appCopiar}
-            </button>
-            <button className="link" onClick={() => setBannerApp(false)}>
-              {t.cerrar}
-            </button>
-          </div>
-          <small>{t.appMenu}</small>
-        </div>
-      )}
-
       <div className="lang" role="group" aria-label="Idioma / Language">
         {IDIOMAS.map((i) => (
           <button
@@ -963,34 +877,6 @@ export default function App() {
       )}
 
       {aviso && <div className="aviso">{aviso}</div>}
-
-      {final && !vista && (
-        <div className="modal-bg encima">
-          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="ft">
-            <h2 id="ft">{t.finalTitulo}</h2>
-            <p className="final-texto">{t.finalTexto}</p>
-            <a className="btn btn-link" href={URL_FACEBOOK} target="_blank" rel="noopener noreferrer">
-              {t.finalBtn}
-            </a>
-            <button className="link" onClick={() => setFinal(false)}>
-              {t.cerrar}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {vista && (
-        <div className="modal-bg encima">
-          <div className="modal vista" role="dialog" aria-modal="true" aria-labelledby="vt">
-            <h2 id="vt">{t.vistaTitulo}</h2>
-            <img src={vista} alt={t.posterTitulo} />
-            <p>{t.vistaAyuda}</p>
-            <button className="btn" onClick={() => setVista(null)}>
-              {t.cerrar}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ================= CUADRO DEL NOMBRE ================= */}
       {modal && (
