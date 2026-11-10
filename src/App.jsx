@@ -459,6 +459,7 @@ export default function App() {
   // Ancho real del póster (para escalar textos dentro de la captura)
   useEffect(() => {
     const el = posterRef.current
+    if (!el) return // en la pantalla de bloqueo (navegador de app) no hay póster
     const ro = new ResizeObserver(() => setW(el.offsetWidth))
     ro.observe(el)
     setW(el.offsetWidth)
