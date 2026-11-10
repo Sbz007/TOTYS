@@ -431,3 +431,32 @@ body {
 .op { background: linear-gradient(110deg, rgba(255,255,255,.05) 30%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.05) 70%); background-size: 200% 100%; animation: op-carga 1.4s linear infinite; }
 @keyframes op-carga { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .op { animation: none; } }
+
+
+/* ================= v9: navegador de Facebook / apps ================= */
+
+.modal.vista { max-width: 420px; max-height: 94vh; overflow: auto; }
+.modal.vista img { width: 100%; height: auto; border-radius: 8px; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; }
+.modal.vista p { font-size: 13px; line-height: 1.5; color: var(--lima); }
+
+
+/* ================= v10: pantalla final ================= */
+.final-texto { font-size: 14px; line-height: 1.6; opacity: .9; }
+.btn-link { display: block; text-decoration: none; text-align: center; }
+
+/* Pantalla final y vista de la imagen: por encima del cuadro del nombre (z 70), debajo de los avisos (z 80) */
+.modal-bg.encima { z-index: 75; }
+
+/* ================= Pantalla de bloqueo en navegadores de apps ================= */
+.bloqueo-app {
+  position: fixed; inset: 0; z-index: 9999; overflow: auto;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: radial-gradient(ellipse at top, #14601a 0, var(--verde-fondo) 70%);
+}
+.bloqueo-lang { z-index: 10000; }
+.bloqueo-caja {
+  width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 14px; text-align: center;
+  background: var(--verde-oscuro); border: 2px solid var(--dorado); border-radius: 14px; padding: 26px 20px;
+}
+.bloqueo-msg { color: var(--dorado); font-size: 20px; line-height: 1.35; font-weight: 700; }
+.bloqueo-caja small { opacity: .75; font-size: 11px; line-height: 1.5; }
