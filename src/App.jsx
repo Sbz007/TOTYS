@@ -80,7 +80,7 @@ const URL_FACEBOOK = 'https://www.facebook.com/Zee.IO23'
 
 // >>> Estadísticas: pega aquí la URL de tu Apps Script (termina en /exec).
 // Si queda vacía, no se envía nada.
-const URL_VOTOS = 'https://script.google.com/macros/s/AKfycbxW_VWp-IPwzvwSwUeS9uHxT8sZSW4o-2DCSxm-mREZooTA1gVHwDFmLdra7KarlWyNLA/exec'
+const URL_VOTOS = ''
 
 const IDIOMAS = [
   { c: 'es', l: 'ES' },
