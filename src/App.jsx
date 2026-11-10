@@ -75,6 +75,9 @@ const ORDEN = ['POR', 'DEF', 'MED', 'DEL']
 // >>> Pon aquí tu URL (sale abajo en la imagen al terminar el equipo)
 const URL_SITIO = 'totys.vercel.app'
 
+// Página de Facebook que se muestra al terminar
+const URL_FACEBOOK = 'https://www.facebook.com/Zee.IO23'
+
 // >>> Estadísticas: pega aquí la URL de tu Apps Script (termina en /exec).
 // Si queda vacía, no se envía nada.
 const URL_VOTOS = 'https://script.google.com/macros/s/AKfycbxW_VWp-IPwzvwSwUeS9uHxT8sZSW4o-2DCSxm-mREZooTA1gVHwDFmLdra7KarlWyNLA/exec'
@@ -116,6 +119,9 @@ const T = {
     appCopiado: 'Enlace copiado. Pégalo en tu navegador',
     appMenu: 'Si no se abre, toca los tres puntos (⋯) y elige "Abrir en el navegador" o "Abrir en Safari".',
     vistaTitulo: 'Tu equipo está listo',
+    finalTitulo: '¡Gracias por armar tu equipo!',
+    finalTexto: 'Síguenos en Facebook para ver más contenido de Zee IO.',
+    finalBtn: 'Ir a la página de Facebook',
     vistaAyuda: 'Mantén presionada la imagen y elige "Guardar imagen" o "Descargar imagen".',
     cerrar: 'Cerrar',
     tutSig: 'Siguiente', tutAtras: 'Atrás', tutEmpezar: 'Empezar', tutSaltar: 'Saltar', tutAyuda: 'Cómo se juega',
@@ -161,6 +167,9 @@ const T = {
     appCopiado: 'Link copied. Paste it in your browser',
     appMenu: 'If it doesn\'t open, tap the three dots (⋯) and choose "Open in browser" or "Open in Safari".',
     vistaTitulo: 'Your team is ready',
+    finalTitulo: 'Thanks for building your team!',
+    finalTexto: 'Follow us on Facebook for more from Zee IO.',
+    finalBtn: 'Go to our Facebook page',
     vistaAyuda: 'Press and hold the image and choose "Save image" or "Download image".',
     cerrar: 'Close',
     tutSig: 'Next', tutAtras: 'Back', tutEmpezar: 'Start', tutSaltar: 'Skip', tutAyuda: 'How it works',
@@ -206,6 +215,9 @@ const T = {
     appCopiado: 'Link copiado. Cole no seu navegador',
     appMenu: 'Se não abrir, toque nos três pontos (⋯) e escolha "Abrir no navegador" ou "Abrir no Safari".',
     vistaTitulo: 'Seu time está pronto',
+    finalTitulo: 'Obrigado por montar seu time!',
+    finalTexto: 'Siga-nos no Facebook para ver mais do Zee IO.',
+    finalBtn: 'Ir para a página do Facebook',
     vistaAyuda: 'Segure a imagem e escolha "Salvar imagem" ou "Baixar imagem".',
     cerrar: 'Fechar',
     tutSig: 'Próximo', tutAtras: 'Voltar', tutEmpezar: 'Começar', tutSaltar: 'Pular', tutAyuda: 'Como funciona',
@@ -403,6 +415,7 @@ export default function App() {
   const [eligiendo, setEligiendo] = useState(false) // selector de formación abierto
   const [eligio, setEligio] = useState(false) // ya eligió formación al menos una vez
   const [bannerApp, setBannerApp] = useState(EN_APP) // aviso "ábrelo en tu navegador"
+  const [final, setFinal] = useState(false) // pantalla final con la página de Facebook
   const [vista, setVista] = useState(null) // imagen lista para guardar a mano (navegadores de apps)
   const SLOTS = FORMACIONES[formacion].slots
   const [aviso, setAviso] = useState('')
@@ -723,6 +736,7 @@ export default function App() {
     try {
       bajar(await generar())
       registrarVoto()
+      setFinal(true)
     } catch (err) {
       console.error(err)
       avisar(t.error)
@@ -745,9 +759,11 @@ export default function App() {
           text: `${t.shareTexto} https://${URL_SITIO}`,
         })
         registrarVoto()
+        setFinal(true)
       } else {
         bajar(canvas) // navegador sin soporte: se descarga
         registrarVoto()
+        setFinal(true)
         if (!EN_APP) avisar(t.shareNoDisp)
       }
     } catch (err) {
@@ -948,8 +964,23 @@ export default function App() {
 
       {aviso && <div className="aviso">{aviso}</div>}
 
+      {final && !vista && (
+        <div className="modal-bg encima">
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="ft">
+            <h2 id="ft">{t.finalTitulo}</h2>
+            <p className="final-texto">{t.finalTexto}</p>
+            <a className="btn btn-link" href={URL_FACEBOOK} target="_blank" rel="noopener noreferrer">
+              {t.finalBtn}
+            </a>
+            <button className="link" onClick={() => setFinal(false)}>
+              {t.cerrar}
+            </button>
+          </div>
+        </div>
+      )}
+
       {vista && (
-        <div className="modal-bg">
+        <div className="modal-bg encima">
           <div className="modal vista" role="dialog" aria-modal="true" aria-labelledby="vt">
             <h2 id="vt">{t.vistaTitulo}</h2>
             <img src={vista} alt={t.posterTitulo} />

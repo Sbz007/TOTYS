@@ -447,3 +447,11 @@ body {
 .modal.vista { max-width: 420px; max-height: 94vh; overflow: auto; }
 .modal.vista img { width: 100%; height: auto; border-radius: 8px; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; }
 .modal.vista p { font-size: 13px; line-height: 1.5; color: var(--lima); }
+
+
+/* ================= v10: pantalla final ================= */
+.final-texto { font-size: 14px; line-height: 1.6; opacity: .9; }
+.btn-link { display: block; text-decoration: none; text-align: center; }
+
+/* Pantalla final y vista de la imagen: por encima del cuadro del nombre (z 70), debajo de los avisos (z 80) */
+.modal-bg.encima { z-index: 75; }
