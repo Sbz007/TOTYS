@@ -87,13 +87,13 @@ const T = {
     fb: 'RECUERDA SEGUIR A ZEE IO EN FACEBOOK',
     titulo: 'Elige tu Equipo del Año',
     posterTitulo: 'EQUIPO DEL AÑO',
-    ayuda: 'Toca una carta para colocarla en la cancha. Toca una carta de la cancha para quitarla. En computadora también puedes arrastrarlas.',
+    ayuda: 'Toca una carta para colocarla en la cancha, o mantenla presionada y arrástrala hasta su puesto. Toca una carta de la cancha para quitarla.',
     terminar: 'Terminar equipo',
     tutTitulo: 'Arma tu equipo en 4 pasos',
     tutPasos: [
       { t: 'Elige tu formación', d: 'Después de este tutorial eliges entre 3-4-3, 4-3-3 y 4-4-2. Puedes cambiarla cuando quieras y tus jugadores se mantienen en su posición cuando es posible.' },
       { t: 'Elige la posición', d: 'Usa las pestañas para ver a los candidatos de cada línea: porteros, defensas, medios y delanteros.' },
-      { t: 'Pon al jugador en su puesto', d: 'Toca una carta y irá al primer hueco libre. En computadora también puedes arrastrarla hasta su puesto. Toca una carta de la cancha para quitarla.' },
+      { t: 'Pon al jugador en su puesto', d: 'Toca una carta y irá al primer hueco libre, o mantenla presionada y arrástrala hasta su puesto. Toca una carta de la cancha para quitarla.' },
       { t: 'Guarda y comparte tu equipo', d: 'Cuando completes tu equipo, escribe tu nombre y descarga o comparte la imagen con tus elecciones.' },
     ],
     formTitulo: 'Elige tu formación',
@@ -124,13 +124,13 @@ const T = {
     fb: 'REMEMBER TO FOLLOW ZEE IO ON FACEBOOK',
     titulo: 'Pick your Team of the Year',
     posterTitulo: 'TEAM OF THE YEAR',
-    ayuda: 'Tap a card to place it on the pitch. Tap a card on the pitch to remove it. On a computer you can also drag them.',
+    ayuda: 'Tap a card to place it on the pitch, or press and hold to drag it to its spot. Tap a card on the pitch to remove it.',
     terminar: 'Finish team',
     tutTitulo: 'Build your team in 4 steps',
     tutPasos: [
       { t: 'Pick your formation', d: 'After this tutorial you choose between 3-4-3, 4-3-3 and 4-4-2. You can change it any time and your players stay in their position when possible.' },
       { t: 'Pick a position', d: 'Use the tabs to see the candidates for each line: goalkeepers, defenders, midfielders and forwards.' },
-      { t: 'Put the player in place', d: 'Tap a card and it goes to the first free spot. On a computer you can also drag it to its spot. Tap a card on the pitch to remove it.' },
+      { t: 'Put the player in place', d: 'Tap a card and it goes to the first free spot, or press and hold to drag it to its spot. Tap a card on the pitch to remove it.' },
       { t: 'Save and share your team', d: 'When your team is complete, type your name and download or share the image with your picks.' },
     ],
     formTitulo: 'Pick your formation',
@@ -161,13 +161,13 @@ const T = {
     fb: 'LEMBRE-SE DE SEGUIR O ZEE IO NO FACEBOOK',
     titulo: 'Escolha seu Time do Ano',
     posterTitulo: 'TIME DO ANO',
-    ayuda: 'Toque em uma carta para colocá-la no campo. Toque em uma carta no campo para removê-la. No computador você também pode arrastá-las.',
+    ayuda: 'Toque em uma carta para colocá-la no campo, ou segure e arraste até o lugar. Toque em uma carta no campo para removê-la.',
     terminar: 'Finalizar time',
     tutTitulo: 'Monte seu time em 4 passos',
     tutPasos: [
       { t: 'Escolha sua formação', d: 'Depois deste tutorial você escolhe entre 3-4-3, 4-3-3 e 4-4-2. Você pode mudar quando quiser e seus jogadores continuam na posição quando possível.' },
       { t: 'Escolha a posição', d: 'Use as abas para ver os candidatos de cada linha: goleiros, defensores, meio-campistas e atacantes.' },
-      { t: 'Coloque o jogador no lugar', d: 'Toque em uma carta e ela vai para a primeira vaga livre. No computador você também pode arrastá-la até o lugar. Toque em uma carta do campo para removê-la.' },
+      { t: 'Coloque o jogador no lugar', d: 'Toque em uma carta e ela vai para a primeira vaga livre, ou segure e arraste até o lugar. Toque em uma carta do campo para removê-la.' },
       { t: 'Salve e compartilhe seu time', d: 'Quando seu time estiver completo, digite seu nome e baixe ou compartilhe a imagem com suas escolhas.' },
     ],
     formTitulo: 'Escolha sua formação',
@@ -429,8 +429,20 @@ export default function App() {
   const empezar = (e, player, from) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return
     if (e.pointerType === 'touch') {
-      // En celular no se arrastra: solo cuenta un toque. Si el dedo desliza, es scroll y no se elige nada.
-      pendRef.current = { player, from, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY }
+      // En celular: toque corto = colocar/quitar; deslizar = scroll; mantener presionado = arrastrar.
+      const pend = { player, from, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY }
+      // Mantener presionado un instante (sin mover) convierte el toque en arrastre
+      pend.timer = setTimeout(() => {
+        if (pendRef.current !== pend) return
+        pendRef.current = null
+        const d = { player, from, x: pend.x, y: pend.y, sx: pend.sx, sy: pend.sy, moved: true }
+        dragRef.current = d
+        setDrag(d)
+        try {
+          navigator.vibrate?.(15)
+        } catch {}
+      }, 280)
+      pendRef.current = pend
       return
     }
     e.preventDefault()
@@ -550,6 +562,27 @@ export default function App() {
       window.removeEventListener('touchmove', bloquear)
     }
   }, [])
+
+  // Al arrastrar cerca del borde superior/inferior, la página se desplaza sola
+  // (en celular la lista de cartas y la cancha no caben juntas en pantalla)
+  const arrastrando = !!drag?.moved
+  useEffect(() => {
+    if (!arrastrando) return
+    let raf
+    const paso = () => {
+      const d = dragRef.current
+      if (d) {
+        const zona = 100
+        const v = 18
+        if (d.y < zona) window.scrollBy(0, -Math.ceil((v * (zona - d.y)) / zona))
+        else if (d.y > window.innerHeight - zona)
+          window.scrollBy(0, Math.ceil((v * (d.y - (window.innerHeight - zona))) / zona))
+      }
+      raf = requestAnimationFrame(paso)
+    }
+    raf = requestAnimationFrame(paso)
+    return () => cancelAnimationFrame(raf)
+  }, [arrastrando])
 
   /* ---------- Formación ---------- */
   // Los jugadores se conservan por posición, en el orden en que estaban, mientras haya huecos
