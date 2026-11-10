@@ -18,6 +18,6 @@ const lista = (pos, prefijo, nombres) =>
 export const JUGADORES = [
   ...lista('POR', 'por', Array.from({ length: 5 }, (_, i) => `Portero ${i + 1}`)),
   ...lista('DEF', 'def', Array.from({ length: 10 }, (_, i) => `Defensa ${i + 1}`)),
-  ...lista('MED', 'med', Array.from({ length: 10 }, (_, i) => `Medio ${i + 1}`)),
+  ...lista('MED', 'med', Array.from({ length: 11 }, (_, i) => `Medio ${i + 1}`)),
   ...lista('DEL', 'del', Array.from({ length: 12 }, (_, i) => `Delantero ${i + 1}`)),
 ]

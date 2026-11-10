@@ -3,26 +3,76 @@ import html2canvas from 'html2canvas'
 import { JUGADORES } from './players'
 import './App.css'
 
-/* Formación 3-4-3 (x, y = centro de la carta en % del póster).
-   Solo acepta jugadores de su misma posición. */
-const SLOTS = [
-  { id: 'del1', pos: 'DEL', x: 28.4, y: 25 },
-  { id: 'del2', pos: 'DEL', x: 51, y: 30 },
-  { id: 'del3', pos: 'DEL', x: 73, y: 25 },
-  { id: 'ban1', pos: 'DEL', x: 16, y: 44.5 },
-  { id: 'med1', pos: 'MED', x: 38.7, y: 49.5 },
-  { id: 'med2', pos: 'MED', x: 62, y: 49.5 },
-  { id: 'ban2', pos: 'DEL', x: 85, y: 44.5 },
-  { id: 'def1', pos: 'DEF', x: 16.7, y: 67.5 },
-  { id: 'por', pos: 'POR', x: 38.5, y: 73.5 },
-  { id: 'def2', pos: 'DEF', x: 62, y: 73.5 },
-  { id: 'def3', pos: 'DEF', x: 85, y: 67.5 },
-]
+/* Formaciones (x, y = centro de la carta en % del póster).
+   Cada hueco solo acepta jugadores de su misma posición.
+   En esta app los extremos/bandas cuentan como delanteros (DEL).
+   'compacto' reduce el tamaño de las cartas cuando hay 4 filas. */
+const FORMACIONES = {
+  '343': {
+    nombre: '3-4-3',
+    compacto: false,
+    slots: [
+      { id: 'del1', pos: 'DEL', x: 28.4, y: 25 },
+      { id: 'del2', pos: 'DEL', x: 51, y: 30 },
+      { id: 'del3', pos: 'DEL', x: 73, y: 25 },
+      { id: 'ban1', pos: 'DEL', x: 16, y: 44.5 },
+      { id: 'med1', pos: 'MED', x: 38.7, y: 49.5 },
+      { id: 'med2', pos: 'MED', x: 62, y: 49.5 },
+      { id: 'ban2', pos: 'DEL', x: 85, y: 44.5 },
+      { id: 'def1', pos: 'DEF', x: 16.7, y: 67.5 },
+      { id: 'por', pos: 'POR', x: 38.5, y: 73.5 },
+      { id: 'def2', pos: 'DEF', x: 62, y: 73.5 },
+      { id: 'def3', pos: 'DEF', x: 85, y: 67.5 },
+    ],
+  },
+  '433': {
+    nombre: '4-3-3',
+    compacto: true,
+    slots: [
+      { id: 'del1', pos: 'DEL', x: 24, y: 23.5 },
+      { id: 'del2', pos: 'DEL', x: 50, y: 23.5 },
+      { id: 'del3', pos: 'DEL', x: 76, y: 23.5 },
+      { id: 'med1', pos: 'MED', x: 26, y: 41.5 },
+      { id: 'med2', pos: 'MED', x: 50, y: 41.5 },
+      { id: 'med3', pos: 'MED', x: 74, y: 41.5 },
+      { id: 'def1', pos: 'DEF', x: 14, y: 59.5 },
+      { id: 'def2', pos: 'DEF', x: 38, y: 59.5 },
+      { id: 'def3', pos: 'DEF', x: 62, y: 59.5 },
+      { id: 'def4', pos: 'DEF', x: 86, y: 59.5 },
+      { id: 'por', pos: 'POR', x: 50, y: 77 },
+    ],
+  },
+  '442': {
+    nombre: '4-4-2',
+    compacto: true,
+    slots: [
+      { id: 'del1', pos: 'DEL', x: 38, y: 23.5 },
+      { id: 'del2', pos: 'DEL', x: 62, y: 23.5 },
+      { id: 'ban1', pos: 'DEL', x: 14, y: 41.5 },
+      { id: 'med1', pos: 'MED', x: 38, y: 41.5 },
+      { id: 'med2', pos: 'MED', x: 62, y: 41.5 },
+      { id: 'ban2', pos: 'DEL', x: 86, y: 41.5 },
+      { id: 'def1', pos: 'DEF', x: 14, y: 59.5 },
+      { id: 'def2', pos: 'DEF', x: 38, y: 59.5 },
+      { id: 'def3', pos: 'DEF', x: 62, y: 59.5 },
+      { id: 'def4', pos: 'DEF', x: 86, y: 59.5 },
+      { id: 'por', pos: 'POR', x: 50, y: 77 },
+    ],
+  },
+}
+const FORM_ORDEN = ['343', '433', '442']
+
+// ¿Puede este jugador ir en este hueco?
+const cabe = (slot, player) => slot.pos === player.pos
 
 const ORDEN = ['POR', 'DEF', 'MED', 'DEL']
 
 // >>> Pon aquí tu URL (sale abajo en la imagen al terminar el equipo)
-const URL_SITIO = 'https://totys.vercel.app/'
+const URL_SITIO = 'totys.vercel.app'
+
+// >>> Estadísticas: pega aquí la URL de tu Apps Script (termina en /exec).
+// Si queda vacía, no se envía nada.
+const URL_VOTOS = 'https://script.google.com/macros/s/AKfycbxW_VWp-IPwzvwSwUeS9uHxT8sZSW4o-2DCSxm-mREZooTA1gVHwDFmLdra7KarlWyNLA/exec'
 
 const IDIOMAS = [
   { c: 'es', l: 'ES' },
@@ -34,10 +84,28 @@ const T = {
   es: {
     pos: { POR: 'POR', DEF: 'DEF', MED: 'MED', DEL: 'DEL' },
     grupos: { POR: 'Porteros', DEF: 'Defensas', MED: 'Medios', DEL: 'Delanteros' },
+    fb: 'RECUERDA SEGUIR A ZEE IO EN FACEBOOK',
     titulo: 'Elige tu Equipo del Año',
     posterTitulo: 'EQUIPO DEL AÑO',
-    ayuda: 'Toca una carta para colocarla, o mantenla presionada y arrástrala a la cancha. Toca una carta de la cancha para quitarla.',
+    ayuda: 'Toca una carta para colocarla en la cancha. Toca una carta de la cancha para quitarla. En computadora también puedes arrastrarlas.',
     terminar: 'Terminar equipo',
+    tutTitulo: 'Arma tu equipo en 4 pasos',
+    tutPasos: [
+      { t: 'Elige tu formación', d: 'Después de este tutorial eliges entre 3-4-3, 4-3-3 y 4-4-2. Puedes cambiarla cuando quieras y tus jugadores se mantienen en su posición cuando es posible.' },
+      { t: 'Elige la posición', d: 'Usa las pestañas para ver a los candidatos de cada línea: porteros, defensas, medios y delanteros.' },
+      { t: 'Pon al jugador en su puesto', d: 'Toca una carta y irá al primer hueco libre. En computadora también puedes arrastrarla hasta su puesto. Toca una carta de la cancha para quitarla.' },
+      { t: 'Guarda y comparte tu equipo', d: 'Cuando completes tu equipo, escribe tu nombre y descarga o comparte la imagen con tus elecciones.' },
+    ],
+    formTitulo: 'Elige tu formación',
+    formCambiar: 'Formación',
+    formCancelar: 'Cancelar',
+    d343: '3 defensas · 2 medios · 5 delanteros',
+    d433: '4 defensas · 3 medios · 3 delanteros',
+    d442: '4 defensas · 2 medios · 4 delanteros',
+    compartir: 'Compartir imagen',
+    shareTexto: 'Mi Equipo del Año. Crea el tuyo en',
+    shareNoDisp: 'Tu navegador no permite compartir; se descargó la imagen',
+    tutSig: 'Siguiente', tutAtras: 'Atrás', tutEmpezar: 'Empezar', tutSaltar: 'Saltar', tutAyuda: 'Cómo se juega',
     nombreQ: '¿Cuál es tu nombre?',
     placeholder: 'Escribe tu nombre',
     descargar: 'Descargar imagen con los resultados',
@@ -53,10 +121,28 @@ const T = {
   en: {
     pos: { POR: 'GK', DEF: 'DEF', MED: 'MID', DEL: 'FWD' },
     grupos: { POR: 'Goalkeepers', DEF: 'Defenders', MED: 'Midfielders', DEL: 'Forwards' },
+    fb: 'REMEMBER TO FOLLOW ZEE IO ON FACEBOOK',
     titulo: 'Pick your Team of the Year',
     posterTitulo: 'TEAM OF THE YEAR',
-    ayuda: 'Tap a card to place it, or press and hold to drag it onto the pitch. Tap a card on the pitch to remove it.',
+    ayuda: 'Tap a card to place it on the pitch. Tap a card on the pitch to remove it. On a computer you can also drag them.',
     terminar: 'Finish team',
+    tutTitulo: 'Build your team in 4 steps',
+    tutPasos: [
+      { t: 'Pick your formation', d: 'After this tutorial you choose between 3-4-3, 4-3-3 and 4-4-2. You can change it any time and your players stay in their position when possible.' },
+      { t: 'Pick a position', d: 'Use the tabs to see the candidates for each line: goalkeepers, defenders, midfielders and forwards.' },
+      { t: 'Put the player in place', d: 'Tap a card and it goes to the first free spot. On a computer you can also drag it to its spot. Tap a card on the pitch to remove it.' },
+      { t: 'Save and share your team', d: 'When your team is complete, type your name and download or share the image with your picks.' },
+    ],
+    formTitulo: 'Pick your formation',
+    formCambiar: 'Formation',
+    formCancelar: 'Cancel',
+    d343: '3 defenders · 2 midfielders · 5 forwards',
+    d433: '4 defenders · 3 midfielders · 3 forwards',
+    d442: '4 defenders · 2 midfielders · 4 forwards',
+    compartir: 'Share image',
+    shareTexto: 'My Team of the Year. Create yours at',
+    shareNoDisp: 'Your browser can\'t share; the image was downloaded instead',
+    tutSig: 'Next', tutAtras: 'Back', tutEmpezar: 'Start', tutSaltar: 'Skip', tutAyuda: 'How it works',
     nombreQ: "What's your name?",
     placeholder: 'Type your name',
     descargar: 'Download image with the results',
@@ -72,10 +158,28 @@ const T = {
   pt: {
     pos: { POR: 'GOL', DEF: 'ZAG', MED: 'MEI', DEL: 'ATA' },
     grupos: { POR: 'Goleiros', DEF: 'Defensores', MED: 'Meio-campistas', DEL: 'Atacantes' },
+    fb: 'LEMBRE-SE DE SEGUIR O ZEE IO NO FACEBOOK',
     titulo: 'Escolha seu Time do Ano',
     posterTitulo: 'TIME DO ANO',
-    ayuda: 'Toque em uma carta para colocá-la, ou segure e arraste para o campo. Toque em uma carta no campo para removê-la.',
+    ayuda: 'Toque em uma carta para colocá-la no campo. Toque em uma carta no campo para removê-la. No computador você também pode arrastá-las.',
     terminar: 'Finalizar time',
+    tutTitulo: 'Monte seu time em 4 passos',
+    tutPasos: [
+      { t: 'Escolha sua formação', d: 'Depois deste tutorial você escolhe entre 3-4-3, 4-3-3 e 4-4-2. Você pode mudar quando quiser e seus jogadores continuam na posição quando possível.' },
+      { t: 'Escolha a posição', d: 'Use as abas para ver os candidatos de cada linha: goleiros, defensores, meio-campistas e atacantes.' },
+      { t: 'Coloque o jogador no lugar', d: 'Toque em uma carta e ela vai para a primeira vaga livre. No computador você também pode arrastá-la até o lugar. Toque em uma carta do campo para removê-la.' },
+      { t: 'Salve e compartilhe seu time', d: 'Quando seu time estiver completo, digite seu nome e baixe ou compartilhe a imagem com suas escolhas.' },
+    ],
+    formTitulo: 'Escolha sua formação',
+    formCambiar: 'Formação',
+    formCancelar: 'Cancelar',
+    d343: '3 defensores · 2 meias · 5 atacantes',
+    d433: '4 defensores · 3 meias · 3 atacantes',
+    d442: '4 defensores · 2 meias · 4 atacantes',
+    compartir: 'Compartilhar imagem',
+    shareTexto: 'Meu Time do Ano. Crie o seu em',
+    shareNoDisp: 'Seu navegador não permite compartilhar; a imagem foi baixada',
+    tutSig: 'Próximo', tutAtras: 'Voltar', tutEmpezar: 'Começar', tutSaltar: 'Pular', tutAyuda: 'Como funciona',
     nombreQ: 'Qual é o seu nome?',
     placeholder: 'Digite seu nome',
     descargar: 'Baixar imagem com os resultados',
@@ -127,12 +231,148 @@ function Carta({ p, t }) {
   )
 }
 
+function FormacionMini({ slots }) {
+  return (
+    <svg className="mini" viewBox="0 8 100 82" aria-hidden="true">
+      <rect x="3" y="11" width="94" height="76" rx="3" className="mini-campo" />
+      <line x1="3" y1="49" x2="97" y2="49" className="mini-campo" />
+      {slots.map((s) => (
+        <circle key={s.id} cx={s.x} cy={s.y} r="5.2" className={s.pos === 'POR' ? 'mini-por' : 'mini-j'} />
+      ))}
+    </svg>
+  )
+}
+
+function SelectorFormacion({ t, actual, obligatorio, onElegir, onCerrar }) {
+  useEffect(() => {
+    if (obligatorio) return
+    const tecla = (e) => e.key === 'Escape' && onCerrar()
+    window.addEventListener('keydown', tecla)
+    return () => window.removeEventListener('keydown', tecla)
+  }, [obligatorio, onCerrar])
+
+  return (
+    <div className="modal-bg">
+      <div className="modal sel-form" role="dialog" aria-modal="true" aria-labelledby="sf-t">
+        <h2 id="sf-t">{t.formTitulo}</h2>
+        <div className="forms">
+          {FORM_ORDEN.map((k) => (
+            <button
+              key={k}
+              className={`form-card ${k === actual ? 'on' : ''}`}
+              onClick={() => onElegir(k)}
+            >
+              <FormacionMini slots={FORMACIONES[k].slots} />
+              <b>{FORMACIONES[k].nombre}</b>
+              <span>{t['d' + k]}</span>
+            </button>
+          ))}
+        </div>
+        {!obligatorio && (
+          <button className="link" onClick={onCerrar}>
+            {t.formCancelar}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function Tutorial({ t, onClose }) {
+  const [i, setI] = useState(0)
+  const pasos = t.tutPasos
+  const ultimo = i === pasos.length - 1
+
+  useEffect(() => {
+    const tecla = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', tecla)
+    return () => window.removeEventListener('keydown', tecla)
+  }, [onClose])
+
+  return (
+    <div className="modal-bg">
+      <div className="modal tut" role="dialog" aria-modal="true" aria-labelledby="tut-t">
+        <h2 id="tut-t">{t.tutTitulo}</h2>
+
+        <div className="tut-demo" aria-hidden="true">
+          {i === 0 && (
+            <div className="demo-forms">
+              {FORM_ORDEN.map((k, n) => (
+                <div key={k} style={{ animationDelay: `${n * 1.6}s` }}>
+                  <FormacionMini slots={FORMACIONES[k].slots} />
+                  <b>{FORMACIONES[k].nombre}</b>
+                </div>
+              ))}
+            </div>
+          )}
+          {i === 1 && (
+            <div className="demo-tabs">
+              {['POR', 'DEF', 'MED', 'DEL'].map((p, k) => (
+                <span key={p} style={{ animationDelay: `${k * 0.9}s` }}>
+                  {t.grupos[p]}
+                </span>
+              ))}
+            </div>
+          )}
+          {i === 2 && (
+            <div className="demo-move">
+              <div className="demo-slot" />
+              <div className="demo-card" />
+              <div className="demo-finger" />
+            </div>
+          )}
+          {i === 3 && (
+            <div className="demo-save">
+              <div className="demo-btn">{t.descargar}</div>
+              <div className="demo-btn sec">{t.compartir}</div>
+              <div className="demo-check">✓</div>
+            </div>
+          )}
+        </div>
+
+        <div className="tut-paso" key={i}>
+          <b>
+            {i + 1}. {pasos[i].t}
+          </b>
+          <p>{pasos[i].d}</p>
+        </div>
+
+        <div className="tut-dots">
+          {pasos.map((_, k) => (
+            <span key={k} className={k === i ? 'on' : ''} />
+          ))}
+        </div>
+
+        <div className="tut-nav">
+          {i > 0 ? (
+            <button className="link" onClick={() => setI(i - 1)}>
+              {t.tutAtras}
+            </button>
+          ) : (
+            <button className="link" onClick={onClose}>
+              {t.tutSaltar}
+            </button>
+          )}
+          <button className="btn" autoFocus onClick={() => (ultimo ? onClose() : setI(i + 1))}>
+            {ultimo ? t.tutEmpezar : t.tutSig}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [lineup, setLineup] = useState({}) // slotId -> playerId
   const [tab, setTab] = useState('POR')
   const [drag, setDrag] = useState(null)
   const [nombre, setNombre] = useState('')
   const [modal, setModal] = useState(false)
+  const [tutorial, setTutorial] = useState(true) // se muestra al entrar
+  const [formacion, setFormacion] = useState('343')
+  const [eligiendo, setEligiendo] = useState(false) // selector de formación abierto
+  const [eligio, setEligio] = useState(false) // ya eligió formación al menos una vez
+  const SLOTS = FORMACIONES[formacion].slots
   const [aviso, setAviso] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [w, setW] = useState(600)
@@ -189,17 +429,8 @@ export default function App() {
   const empezar = (e, player, from) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return
     if (e.pointerType === 'touch') {
-      // En celular el deslizamiento hace scroll; para arrastrar hay que mantener presionado.
-      const pend = { player, from, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY }
-      pend.timer = setTimeout(() => {
-        if (pendRef.current !== pend) return
-        pendRef.current = null
-        const d = { player, from, x: pend.x, y: pend.y, sx: pend.sx, sy: pend.sy, moved: true }
-        dragRef.current = d
-        setDrag(d)
-        try { navigator.vibrate?.(15) } catch {}
-      }, 230)
-      pendRef.current = pend
+      // En celular no se arrastra: solo cuenta un toque. Si el dedo desliza, es scroll y no se elige nada.
+      pendRef.current = { player, from, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY }
       return
     }
     e.preventDefault()
@@ -242,9 +473,18 @@ export default function App() {
       return
     }
     const slot = SLOTS.find((s) => s.id === destino.dataset.slot)
-    if (slot.pos !== player.pos) {
+    if (!cabe(slot, player)) {
       avisar(t.soloAqui(t.grupos[slot.pos].toLowerCase()))
       return
+    }
+    // Al intercambiar, el jugador que estaba en el destino debe caber en el hueco de origen
+    const previoDestino = lineup[slot.id]
+    if (from && from !== slot.id && previoDestino) {
+      const origen = SLOTS.find((s) => s.id === from)
+      if (!cabe(origen, porId[previoDestino])) {
+        avisar(t.soloAqui(t.grupos[origen.pos].toLowerCase()))
+        return
+      }
     }
     setLineup((l) => {
       const n = { ...l }
@@ -311,25 +551,113 @@ export default function App() {
     }
   }, [])
 
-  /* ---------- Descargar imagen ---------- */
+  /* ---------- Formación ---------- */
+  // Los jugadores se conservan por posición, en el orden en que estaban, mientras haya huecos
+  const cambiarFormacion = (key) => {
+    const porPos = {}
+    SLOTS.forEach((s) => {
+      const id = lineup[s.id]
+      if (id) (porPos[s.pos] = porPos[s.pos] || []).push(id)
+    })
+    const nuevo = {}
+    FORMACIONES[key].slots.forEach((s) => {
+      const fila = porPos[s.pos]
+      if (fila && fila.length) nuevo[s.id] = fila.shift()
+    })
+    setLineup(nuevo)
+    setFormacion(key)
+    setEligio(true)
+    setEligiendo(false)
+  }
+
+  const cerrarTutorial = () => {
+    setTutorial(false)
+    if (!eligio) setEligiendo(true) // después del tutorial toca elegir formación
+  }
+
+  /* ---------- Registrar el voto (Google Sheets) ---------- */
+  // Se cuenta al descargar/compartir. El mismo equipo no suma dos veces en el mismo navegador.
+  const registrarVoto = () => {
+    if (!URL_VOTOS) return
+    const jugadores = SLOTS.map((s) => porId[lineup[s.id]])
+      .filter(Boolean)
+      .map((j) => ({ id: j.id, nombre: j.nombre }))
+    if (jugadores.length !== SLOTS.length) return
+    const firma = formacion + ':' + jugadores.map((j) => j.id).sort().join(',')
+    try {
+      if (localStorage.getItem('toty-voto') === firma) return
+    } catch {}
+    fetch(URL_VOTOS, {
+      method: 'POST',
+      mode: 'no-cors',
+      keepalive: true,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ formacion, idioma: lang, jugadores }),
+    })
+      .then(() => {
+        try {
+          localStorage.setItem('toty-voto', firma)
+        } catch {}
+      })
+      .catch(() => {})
+  }
+
+  /* ---------- Descargar y compartir imagen ---------- */
+  const generar = async () => {
+    await document.fonts?.ready
+    const el = posterRef.current
+    return html2canvas(el, {
+      scale: 1440 / el.offsetWidth,
+      useCORS: true,
+      backgroundColor: null,
+    })
+  }
+  const nombreArchivo = () =>
+    `equipo-del-año-${nombre.trim().replace(/\s+/g, '-') || 'dls'}.png`
+  const bajar = (canvas) => {
+    const a = document.createElement('a')
+    a.download = nombreArchivo()
+    a.href = canvas.toDataURL('image/png')
+    a.click()
+  }
+
   const descargar = async () => {
     setGuardando(true)
     try {
-      await document.fonts?.ready
-      const el = posterRef.current
-      const canvas = await html2canvas(el, {
-        scale: 1440 / el.offsetWidth,
-        useCORS: true,
-        backgroundColor: null,
-      })
-      const a = document.createElement('a')
-      const limpio = nombre.trim().replace(/\s+/g, '-')
-      a.download = `equipo-del-año-${limpio || 'dls'}.png`
-      a.href = canvas.toDataURL('image/png')
-      a.click()
+      bajar(await generar())
+      registrarVoto()
     } catch (err) {
       console.error(err)
       avisar(t.error)
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const compartir = async () => {
+    setGuardando(true)
+    try {
+      const canvas = await generar()
+      const blob = await new Promise((ok) => canvas.toBlob(ok, 'image/png'))
+      if (!blob) throw new Error('No se pudo crear la imagen')
+      const file = new File([blob], nombreArchivo(), { type: 'image/png' })
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: t.posterTitulo,
+          text: `${t.shareTexto} https://${URL_SITIO}`,
+        })
+        registrarVoto()
+      } else {
+        bajar(canvas) // navegador sin soporte: se descarga
+        registrarVoto()
+        avisar(t.shareNoDisp)
+      }
+    } catch (err) {
+      if (err?.name !== 'AbortError') {
+        console.error(err)
+        avisar(t.error)
+      }
     } finally {
       setGuardando(false)
     }
@@ -349,11 +677,26 @@ export default function App() {
             {i.l}
           </button>
         ))}
+        <button className="lang-help" onClick={() => setTutorial(true)} title={t.tutAyuda} aria-label={t.tutAyuda}>
+          ?
+        </button>
       </div>
+
+      {tutorial && <Tutorial t={t} onClose={cerrarTutorial} />}
+
+      {eligiendo && !tutorial && (
+        <SelectorFormacion
+          t={t}
+          actual={formacion}
+          obligatorio={!eligio}
+          onElegir={cambiarFormacion}
+          onCerrar={() => setEligiendo(false)}
+        />
+      )}
 
       {/* ================= PÓSTER (lo que se descarga) ================= */}
       <div className="poster-wrap">
-        <div className="poster" ref={posterRef} style={{ '--w': `${w}px` }}>
+        <div className={`poster ${FORMACIONES[formacion].compacto ? 'compacto' : ''}`} ref={posterRef} style={{ '--w': `${w}px` }}>
           <div className="p-head">
             <div className="p-title">{t.posterTitulo}</div>
           </div>
@@ -374,7 +717,7 @@ export default function App() {
 
           {SLOTS.map((s) => {
             const p = porId[lineup[s.id]]
-            const valida = drag?.moved && drag.player.pos === s.pos
+            const valida = drag?.moved && cabe(s, drag.player)
             return (
               <div
                 key={s.id}
@@ -418,6 +761,7 @@ export default function App() {
               <div className="p-cta">
                 <span>{t.cta}</span>
                 <b>{URL_SITIO}</b>
+                <em>{t.fb}</em>
               </div>
             )}
           </div>
@@ -427,6 +771,9 @@ export default function App() {
       {/* ================= PANEL DE CANDIDATOS ================= */}
       <section className="panel">
         <h1>{t.titulo}</h1>
+        <button className="form-btn" onClick={() => setEligiendo(true)}>
+          {t.formCambiar}: <b>{FORMACIONES[formacion].nombre}</b>
+        </button>
         <div className="tabs" role="tablist">
           {ORDEN.map((p) => {
             const total = SLOTS.filter((s) => s.pos === p).length
@@ -497,10 +844,16 @@ export default function App() {
               onChange={(e) => setNombre(e.target.value)}
             />
             {nombreLimpio && (
-              <button className="btn" onClick={descargar} disabled={guardando}>
-                {guardando ? t.generando : t.descargar}
-              </button>
+              <>
+                <button className="btn" onClick={descargar} disabled={guardando}>
+                  {guardando ? t.generando : t.descargar}
+                </button>
+                <button className="btn sec" onClick={compartir} disabled={guardando}>
+                  {t.compartir}
+                </button>
+              </>
             )}
+            <p className="modal-fb">{t.fb}</p>
             <button className="link" onClick={() => setModal(false)}>
               {t.editar}
             </button>
