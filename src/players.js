@@ -6,12 +6,16 @@
 //  (ej: public/cartas/por-1.png se usa como "/cartas/por-1.png")
 // ============================================================
 
+// Formato de tus imágenes en public/cartas/. Después de correr "npm run optimizar"
+// (convierte las cartas a WebP, mucho más livianas), cámbialo a 'webp'.
+const EXT = 'png'
+
 const lista = (pos, prefijo, nombres) =>
   nombres.map((nombre, i) => ({
     id: `${prefijo}-${i + 1}`,
     pos,
     nombre,
-    img: `/cartas/${prefijo}-${i + 1}.png`,
+    img: `/cartas/${prefijo}-${i + 1}.${EXT}`,
   }))
 
 // Reemplaza estos nombres de relleno por los reales (mismo orden que tus imágenes).

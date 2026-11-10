@@ -424,3 +424,10 @@ body {
 .demo-save .demo-check { width: 22px; height: 22px; }
 
 @media (max-width: 520px) { .forms { grid-template-columns: 1fr; } .form-card { flex-direction: row; text-align: left; } .form-card .mini { width: 90px; flex: none; } }
+
+
+/* ================= v8: carga de cartas ================= */
+/* Mientras la imagen carga se ve un hueco suave en vez de un vacío */
+.op { background: linear-gradient(110deg, rgba(255,255,255,.05) 30%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.05) 70%); background-size: 200% 100%; animation: op-carga 1.4s linear infinite; }
+@keyframes op-carga { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .op { animation: none; } }

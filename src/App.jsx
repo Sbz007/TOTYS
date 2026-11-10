@@ -72,7 +72,7 @@ const URL_SITIO = 'totys.vercel.app'
 
 // >>> Estadísticas: pega aquí la URL de tu Apps Script (termina en /exec).
 // Si queda vacía, no se envía nada.
-const URL_VOTOS = 'https://script.google.com/macros/s/AKfycbxW_VWp-IPwzvwSwUeS9uHxT8sZSW4o-2DCSxm-mREZooTA1gVHwDFmLdra7KarlWyNLA/exec'
+const URL_VOTOS = ''
 
 const IDIOMAS = [
   { c: 'es', l: 'ES' },
@@ -224,6 +224,7 @@ function Carta({ p, t }) {
       className="carta-img"
       src={p.img}
       alt={p.nombre}
+      decoding="async"
       draggable={false}
       crossOrigin="anonymous"
       onError={() => setFallo(true)}
@@ -376,6 +377,19 @@ export default function App() {
   const [aviso, setAviso] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [w, setW] = useState(600)
+
+  // Precarga en segundo plano las cartas de las otras pestañas (cuando el navegador está libre),
+  // para que al cambiar de posición ya estén en caché
+  useEffect(() => {
+    const cargar = () => JUGADORES.forEach((j) => { new Image().src = j.img })
+    const id = 'requestIdleCallback' in window
+      ? window.requestIdleCallback(cargar, { timeout: 4000 })
+      : setTimeout(cargar, 1500)
+    return () => {
+      if ('cancelIdleCallback' in window) window.cancelIdleCallback(id)
+      else clearTimeout(id)
+    }
+  }, [])
   const [lang, setLang] = useState(() => {
     try {
       return localStorage.getItem('toty-lang') || 'es'
